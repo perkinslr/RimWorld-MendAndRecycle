@@ -12,14 +12,16 @@ namespace MendAndRecycle
 
             if (job != null && job.def == JobDefOf.DoBill && job.RecipeDef.Worker is RecipeWorkerWithJob worker)
             {
-                return new Job(worker.Job, job.targetA)
+                job = new Job(worker.Job, job.targetA)
                 {
                     targetQueueB = job.targetQueueB,
                     countQueue = job.countQueue,
                     haulMode = job.haulMode,
                     bill = job.bill
                 };
+		return WorkGiver_Utils.GetSecondaryItemsForJob(worker, pawn, job);
             }
+
 
             return job;
         }

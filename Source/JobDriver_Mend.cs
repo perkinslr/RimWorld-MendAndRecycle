@@ -16,6 +16,7 @@ namespace MendAndRecycle
         int costHitPointsPerCycle;
         float workCycle;
         float workCycleProgress;
+	Thing patchMaterial;
 
         public override void ExposeData()
         {
@@ -31,14 +32,56 @@ namespace MendAndRecycle
             return true;
         }
 
+	protected override IEnumerable<Toil> MakeNewToils() {
+	    var ocount = job.count;
+	    if (!job.countQueue.NullOrEmpty()) {
+		job.count = job.countQueue[0];
+	    }
+	    var targetThing = job.targetC;
+
+	    yield return Toils_Goto.GotoThing(TargetIndex.C, PathEndMode.ClosestTouch).FailOnDespawnedNullOrForbidden(TargetIndex.C).FailOnSomeonePhysicallyInteracting(TargetIndex.C);
+	    job.count = 75;
+	    var carryjob = Toils_Haul.StartCarryThing(TargetIndex.C, false, false, false);
+	    yield return carryjob;
+	    yield return Toils_Goto.GotoThing(TargetIndex.A, PathEndMode.InteractionCell).FailOnDestroyedOrNull(TargetIndex.A);
+	    
+	    Toil findPlaceTarget = Toils_JobTransforms.SetTargetToIngredientPlaceCell(TargetIndex.A, TargetIndex.C, TargetIndex.C);
+	    
+ 	    yield return findPlaceTarget;
+ 	    yield return Toils_Haul.PlaceHauledThingInCell(TargetIndex.C, findPlaceTarget, false);
+	    yield return Toils_JobTransforms.ExtractNextTargetFromQueue(TargetIndex.B, false);
+	    yield return new Toil {
+		initAction = delegate {
+		    pawn.Reserve(targetThing, job, 1);
+		    job.count = ocount;
+		    patchMaterial = targetThing.Thing;
+		}
+	    };
+
+	    foreach (var toil in base.MakeNewToils()) {
+	     	yield return toil;
+	    }
+
+	    yield return new Toil {
+		initAction=delegate {
+		    if (pawn.Map.reservationManager.ReservedBy(targetThing, pawn, job)) {
+			pawn.Map.reservationManager.Release(targetThing, pawn, job);
+		    }
+		}
+	    };
+	}
+
+
         protected override Toil DoBill()
         {
             var tableThing = job.GetTarget(BillGiverInd).Thing as Building_WorkTable;
             var refuelableComp = tableThing.GetComp<CompRefuelable>();
 
+
             var toil = new Toil ();
             toil.initAction = delegate {
                 var objectThing = job.GetTarget(IngredientInd).Thing;
+
 
                 job.bill.Notify_DoBillStarted(pawn);
 
@@ -49,11 +92,16 @@ namespace MendAndRecycle
                 Log.Message(" > workCycleProgress=" + workCycleProgress + " costHitPointsPerCycle" + costHitPointsPerCycle);
             };
             toil.tickAction = delegate {
+//		Thing patchMaterial = job.targetQueueB[0].Thing;
                 var objectThing = job.GetTarget(IngredientInd).Thing;
 
                 if (objectThing == null || objectThing.Destroyed) {
                     pawn.jobs.EndCurrentJob (JobCondition.Incompletable);
                 }
+
+		if (patchMaterial == null || patchMaterial.Destroyed) {
+                    pawn.jobs.EndCurrentJob (JobCondition.Incompletable);
+		}
 
                 workCycleProgress -= StatExtension.GetStatValue (pawn, StatDefOf.WorkToMake, true);
 
@@ -62,8 +110,13 @@ namespace MendAndRecycle
                 if (! (tableThing.CurrentlyUsableForBills() && (refuelableComp == null || refuelableComp.HasFuel)) ) {
                     pawn.jobs.EndCurrentJob (JobCondition.Incompletable);
                 }
-
+		bool outofpatchmaterial = false;
                 if (workCycleProgress <= 0) {
+		    patchMaterial.stackCount -= 1;
+		    if (patchMaterial.stackCount==0) {
+			patchMaterial.DeSpawn(DestroyMode.Vanish);
+			outofpatchmaterial = true;
+		    }
                     int remainingHitPoints = objectThing.MaxHitPoints - objectThing.HitPoints;
                     if (remainingHitPoints > 0) {
                         objectThing.HitPoints += (int) Math.Min(remainingHitPoints, costHitPointsPerCycle);
@@ -132,7 +185,9 @@ namespace MendAndRecycle
                     } else if (objectThing.HitPoints > objectThing.MaxHitPoints) {
                         Log.Error("MendAndRecycle :: This should never happen! HitPoints > MaxHitPoints");
                         pawn.jobs.EndCurrentJob (JobCondition.Incompletable);
-                    }
+                    } else if (outofpatchmaterial) {
+			pawn.jobs.EndCurrentJob (JobCondition.Incompletable);
+		    }
 
                     workCycleProgress = workCycle;
                 }
