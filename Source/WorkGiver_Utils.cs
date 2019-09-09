@@ -2,6 +2,7 @@ using RimWorld;
 using Verse;
 using Verse.AI;
 using System.Collections.Generic;
+using System.Linq;
 using System;
 
 namespace MendAndRecycle {
@@ -24,13 +25,21 @@ namespace MendAndRecycle {
                 thingCountList = null;
             }
 
+	    
+
 	    Predicate<Thing> search = t => !t.IsForbidden(pawn) && pawn.CanReserve(t);
 	    
 	    if (!thingCountList.NullOrEmpty()) {
+		var thingCount = thingCountList[0];;
+		foreach (var tc in thingCountList) {
+		    if (tc.count > thingCount.count) {
+			thingCount = tc;
+		    }
+		}
 		Thing closesthing = GenClosest.ClosestThingReachable(
 				        pawn.Position,
 					pawn.Map,
-					ThingRequest.ForDef(thingCountList[0].thingDef),
+					ThingRequest.ForDef(thingCount.thingDef),
 					PathEndMode.ClosestTouch,
 					TraverseParms.For(pawn, Danger.None, TraverseMode.ByPawn),
 					job.bill.ingredientSearchRadius,

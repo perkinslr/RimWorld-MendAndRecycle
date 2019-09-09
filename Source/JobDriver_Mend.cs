@@ -118,9 +118,6 @@ namespace MendAndRecycle
 			outofpatchmaterial = true;
 		    }
                     int remainingHitPoints = objectThing.MaxHitPoints - objectThing.HitPoints;
-                    if (remainingHitPoints > 0) {
-                        objectThing.HitPoints += (int) Math.Min(remainingHitPoints, costHitPointsPerCycle);
-                    }
 
                     float skillPerc = 0.5f;
 
@@ -132,7 +129,10 @@ namespace MendAndRecycle
                             skillPerc = (float)skill.Level / 20f;
 
                             skill.Learn (0.11f * job.RecipeDef.workSkillLearnFactor);
-                        }
+			    if (remainingHitPoints > 0) {
+				objectThing.HitPoints += (skill.Level > remainingHitPoints) ? remainingHitPoints: skill.Level;
+			    }
+			}
                     }
 
                     if (Settings.chances[objectThing.def.techLevel] > 1 - Mathf.Pow(Rand.Value, 1 + skillPerc * 3f))
