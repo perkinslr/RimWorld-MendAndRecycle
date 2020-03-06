@@ -13,6 +13,9 @@ namespace MendAndRecycle
     {
         readonly FieldInfo ApparelWornByCorpseInt = typeof(Apparel).GetField("wornByCorpseInt", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
+
+      static readonly FieldInfo CompQualityInt = typeof(CompQuality).GetField("qualityInt", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+      
         int costHitPointsPerCycle;
         float workCycle;
         float workCycleProgress;
@@ -140,7 +143,21 @@ namespace MendAndRecycle
                         objectThing.HitPoints -= Rand.RangeInclusive(costHitPointsPerCycle, costHitPointsPerCycle * 4);
 
                         MoteMaker.ThrowText(pawn.DrawPos, pawn.Map, "Failed");
-                    }
+
+			if (Rand.Value > skillPerc) {
+			  CompQuality qualityComponent = objectThing.TryGetComp<CompQuality>();
+			  if (qualityComponent!=null) {
+			    QualityCategory qc = qualityComponent.Quality;
+			    if (qc > QualityCategory.Awful) {
+			      CompQualityInt.SetValue(qualityComponent, qc-1);
+			    }
+			    else {
+			      objectThing.HitPoints = 0;
+			    }
+			  }
+			}
+		    }
+		
 
                     pawn.GainComfortFromCellIfPossible ();
 
