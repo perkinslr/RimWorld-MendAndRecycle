@@ -28,7 +28,7 @@ namespace MendAndRecycle
 
 	private static List<Thing> tmpMedicine => (List<Thing>) wgdb.GetField("tmpMedicine", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null);
 
-//	private static dynamic availableCounts => (dynamic) wgdb.GetField("availableCounts", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null);
+	private static ThingDef mendingTable; 
 
 	static WorkGiver_DoBill() {
 	    var harmony = new Harmony("com.lp-programming.mending");
@@ -36,6 +36,7 @@ namespace MendAndRecycle
 	    harmony.Patch(wgdb.GetMethod("TryFindBestBillIngredientsInSet_NoMix", BindingFlags.Static | BindingFlags.NonPublic),
 			  new HarmonyMethod(typeof(WorkGiver_DoBill).GetMethod("TryFindBestBillIngredientsInSet_NoMix", BindingFlags.Static | BindingFlags.Public)),
 			  null);
+	    mendingTable = ThingDef.Named("TableMending");
 	}
 
 
@@ -111,6 +112,9 @@ namespace MendAndRecycle
 	
         public override Job JobOnThing(Pawn pawn, Thing thing, bool forced = false)
         {
+	    if (thing.def != mendingTable) {
+		return base.JobOnThing(pawn, thing, forced);
+	    }
 	    inJobOnThing = true;
 	    workerPawn = pawn;
             var job = base.JobOnThing(pawn, thing, forced);
