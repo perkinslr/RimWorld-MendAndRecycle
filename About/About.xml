@@ -5,6 +5,10 @@
   <url>https://ludeon.com/forums/index.php?topic=22894.0</url>
   <supportedVersions>
     <li>1.1</li>
+<<<<<<< HEAD
+=======
+    <li>1.2</li>
+>>>>>>> 25cb2af9ae8cf7790c9355fc252d8a1846034221
   </supportedVersions>
   <description>Repair the durability of items or just recycle them.
 

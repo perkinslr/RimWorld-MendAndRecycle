@@ -7,6 +7,44 @@ using System;
 
 namespace MendAndRecycle {
     public static class WorkGiver_Utils {
+	public static Thing CanFindSecondaryItems(Pawn pawn, IntVec3 rootCell, Thing target, Bill bill) {
+	    List<ThingDefCountClass> costListAdj = target.CostListAdjusted ();
+
+            List<ThingDefCountClass> thingCountList;
+
+            if (!costListAdj.NullOrEmpty ()) {
+                thingCountList = costListAdj;
+            } else if (!target.def.smeltProducts.NullOrEmpty ()) {
+                thingCountList = target.def.smeltProducts;
+            } else {
+		return null;
+            }
+
+	    	    Predicate<Thing> search = t => !t.IsForbidden(pawn) && pawn.CanReserve(t);
+
+	    
+	    if (!thingCountList.NullOrEmpty()) {
+		var thingCount = thingCountList[0];;
+		foreach (var tc in thingCountList) {
+		    if (tc.count > thingCount.count) {
+			thingCount = tc;
+		    }
+		}
+		Thing closestThing = GenClosest.ClosestThingReachable(
+				        rootCell,
+					pawn.Map,
+					ThingRequest.ForDef(thingCount.thingDef),
+					PathEndMode.ClosestTouch,
+					TraverseParms.For(pawn, Danger.None, TraverseMode.ByPawn),
+					bill.ingredientSearchRadius,
+					search);
+		return closestThing;
+	    }
+	    return null;
+	}
+	
+
+      
 	public static Job GetSecondaryItemsForJob(RecipeWorkerWithJob worker, Pawn pawn, Job job) {
 	    Thing target = job.targetQueueB[0].Thing;
 //	    Thing target = job.targetB.Thing;
@@ -25,7 +63,6 @@ namespace MendAndRecycle {
                 thingCountList = null;
             }
 
-	    
 
 	    Predicate<Thing> search = t => !t.IsForbidden(pawn) && pawn.CanReserve(t);
 	    
@@ -61,6 +98,8 @@ namespace MendAndRecycle {
 			targetC = closesthing
 		    };
 		}
+		JobFailReason.Is("missing " + thingCount.thingDef.LabelAsStuff, "Mend "+target.Label);
+
 		return null;
 		
 	    }

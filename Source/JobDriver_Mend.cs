@@ -91,8 +91,6 @@ namespace MendAndRecycle
                 costHitPointsPerCycle = (int)(objectThing.MaxHitPoints * Settings.costFromMaxHitPoints);
 
                 workCycleProgress = workCycle = Math.Max(job.bill.recipe.workAmount, 10f);
-
-                Log.Message(" > workCycleProgress=" + workCycleProgress + " costHitPointsPerCycle" + costHitPointsPerCycle);
             };
             toil.tickAction = delegate {
 //		Thing patchMaterial = job.targetQueueB[0].Thing;
