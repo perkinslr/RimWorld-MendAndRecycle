@@ -113,7 +113,19 @@ namespace MendAndRecycle
         public override Job JobOnThing(Pawn pawn, Thing thing, bool forced = false)
         {
 	    if (thing.def != mendingTable) {
-		return base.JobOnThing(pawn, thing, forced);
+		var _job = base.JobOnThing(pawn, thing, forced);
+		if (_job!=null && _job.def == JobDefOf.DoBill && _job.RecipeDef.Worker is RecipeWorkerWithJob worker) {
+		    _job = new Job(worker.Job, _job.targetA)
+			{
+			    targetQueueB = _job.targetQueueB,
+			    countQueue = _job.countQueue,
+			    haulMode = _job.haulMode,
+			    bill = _job.bill
+			};
+		    return _job;
+		    
+		}
+		return null;
 	    }
 	    inJobOnThing = true;
 	    workerPawn = pawn;
