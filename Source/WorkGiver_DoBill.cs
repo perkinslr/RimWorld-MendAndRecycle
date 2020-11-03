@@ -114,7 +114,7 @@ namespace MendAndRecycle
         {
 	    if (thing.def != mendingTable) {
 		var _job = base.JobOnThing(pawn, thing, forced);
-		if (_job!=null && _job.def == JobDefOf.DoBill && _job.RecipeDef.Worker is RecipeWorkerWithJob worker) {
+		if (_job!=null && _job.def == JobDefOf.DoBill && _job.RecipeDef.Worker is RecipeWorkerWithJob worker && _job.def.driverClass == typeof(JobDriver_Recycle)) {
 		    _job = new Job(worker.Job, _job.targetA)
 			{
 			    targetQueueB = _job.targetQueueB,
@@ -125,7 +125,7 @@ namespace MendAndRecycle
 		    return _job;
 		    
 		}
-		return null;
+		return _job;
 	    }
 	    inJobOnThing = true;
 	    workerPawn = pawn;
